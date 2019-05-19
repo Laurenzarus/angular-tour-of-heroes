@@ -14,6 +14,11 @@ export class HeroDetailComponent implements OnInit {
 
   @Input() hero: Hero;
   value: "value";
+  /**
+   * ActivatedRoute is used for routes that have information embedded in them 
+   * in the form of parameters. Location is used to control the window, in 
+   * this case providing a back button for the detail component.
+   */
   constructor(private route: ActivatedRoute,
     private heroService: HeroService,
     private location: Location
@@ -32,6 +37,14 @@ export class HeroDetailComponent implements OnInit {
     const id = +this.route.snapshot.paramMap.get('id'); 
     this.heroService.getHero(id)
       .subscribe(hero => this.hero = hero);
+  }
+
+  /**
+   * The back function returns the window to one browser point back from the 
+   * current state. Used in the back button of the component
+   */
+  goBack(): void {
+    this.location.back();
   }
 
 }
