@@ -1,30 +1,79 @@
 import { Injectable } from '@angular/core';
 import { Hero } from '../hero';
-import { HEROES } from '../mock-heroes';
+// don't need mock heros after setting up web api
+// import { HEROES } from '../mock-heroes';
 import { Observable, of } from 'rxjs';
 import { MessageService } from './message.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+// catching errors from http
+import { catchError, map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HeroService {
 
-  //include message service in constructor for hero service
-  constructor(private messageService: MessageService) { }
+  // url to resource. Here goes to web API
+  private heroesUrl: "api/heroes";
 
+  // include message service in constructor for hero service
+  constructor(private http: HttpClient ,private messageService: MessageService) { }
+  // version 1 of getHeroes
   // getHeroes(): Hero[] {
   //   return HEROES;
   // } THIS ONLY WORKS FOR "FAKE" DATA
+  /** Log a HeroService message with the MessageService */
+  private log(message: string) {
+    this.messageService.add(`HeroService: ${message}`);
+  }
 
+  /**
+ * Handle Http operation that failed.
+ * Let the app continue.
+ * @param operation - name of the operation that failed
+ * @param result - optional value to return as the observable result
+ */
+  private handleError<T> (operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+
+    // TODO: send the error to remote logging infrastructure
+    console.error(error); // log to console instead
+
+    // TODO: better job of transforming error for user consumption
+    this.log(`${operation} failed: ${error.message}`);
+
+    // Let the app keep running by returning an empty result.
+    return of(result as T);
+  };
+}
+  /**
+   * GET heroes from the server/webapi
+   */
   getHeroes(): Observable<Hero[]> {
-    // TODO: send the message _after_ fetching the heroes
-    this.messageService.add('HeroService: fetched heroes');
-    return of(HEROES);
+    // creates and executes get request
+    return this.http.get<Hero[]>(this.heroesUrl)
+      .pipe(
+        catchError(this.handleError('getHeroes', []))
+      );
   }
-
+  /** GET hero by id. Will 404 if id not found */
   getHero(id: number): Observable<Hero> {
-    this.messageService.add(`HeroService: Fetched Hero with id = ${id}`);
-    // return first hero from HEROES array where the hero id is equal to url id
-    return of(HEROES.find(hero => hero.id === id));
+    const url = `${this.heroesUrl}/${id}`;
+    return this.http.get<Hero>(url).pipe(
+      tap(_ => this.log(`fetched hero id=${id}`)),
+      catchError(this.handleError<Hero>(`getHero id=${id}`))
+    );
   }
+  // outdate getHeroes that returned Observable array
+  // getHeroes(): Observable<Hero[]> {
+  //   // TODO: send the message _after_ fetching the heroes
+  //   this.messageService.add('HeroService: fetched heroes');
+  //   return of(HEROES);
+  // }
+  // getHero that returns single hero
+  // getHero(id: number): Observable<Hero> {
+  //   this.messageService.add(`HeroService: Fetched Hero with id = ${id}`);
+  //   // return first hero from HEROES array where the hero id is equal to url id
+  //   return of(HEROES.find(hero => hero.id === id));
+  // }
 }
